@@ -21,8 +21,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    public LocationClient mLocationClient;
     private TextView postionText;
+
+    public LocationClient mLocationClient = null;
     private MyLocationListener myListener = new MyLocationListener();
 
     @Override
@@ -30,7 +31,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         mLocationClient = new LocationClient(getApplicationContext());
+        //声明LocationClient类
         mLocationClient.registerLocationListener(myListener);
+        //注册监听函数
 
         setContentView(R.layout.activity_main);
         postionText = (TextView) findViewById(R.id.position_text_view);
@@ -95,12 +98,27 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+
     private class MyLocationListener implements BDLocationListener {
         @Override
         public void onReceiveLocation(BDLocation location) {
+            //此处的BDLocation为定位结果信息类，通过它的各种get方法可获取定位相关的全部结果
+            //以下只列举部分获取经纬度相关（常用）的结果信息
+            //更多结果信息获取说明，请参照类参考中BDLocation类中的说明
+
+            double latitude = location.getLatitude();    //获取纬度信息
+            double longitude = location.getLongitude();    //获取经度信息
+            float radius = location.getRadius();    //获取定位精度，默认值为0.0f
+
+            String coorType = location.getCoorType();
+            //获取经纬度坐标类型，以LocationClientOption中设置过的坐标类型为准
+
+            int errorCode = location.getLocType();
+            //获取定位类型、定位错误返回码，具体信息可参照类参考中BDLocation类中的说明
+
             StringBuilder currentPosition = new StringBuilder();
-            currentPosition.append("纬度：").append(location.getLatitude()).append("\n");
-            currentPosition.append("经度：").append(location.getLongitude()).append("\n");
+            currentPosition.append("纬度：").append(latitude).append("\n");
+            currentPosition.append("经度：").append(longitude).append("\n");
 
 
             currentPosition.append("定位方式:");
