@@ -40,10 +40,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        mLocationClient = new LocationClient(getApplicationContext());
         //声明LocationClient类
-        mLocationClient.registerLocationListener(myListener);
+        mLocationClient = new LocationClient(getApplicationContext());
         //注册监听函数
+        mLocationClient.registerLocationListener(myListener);
+
         SDKInitializer.initialize(getApplicationContext());
 
         setContentView(R.layout.activity_main);
