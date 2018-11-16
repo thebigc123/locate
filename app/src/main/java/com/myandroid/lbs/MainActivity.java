@@ -16,12 +16,22 @@ import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
 import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.SDKInitializer;
+import com.baidu.mapapi.map.BaiduMap;
+import com.baidu.mapapi.map.MapStatusUpdate;
+import com.baidu.mapapi.map.MapStatusUpdateFactory;
+import com.baidu.mapapi.map.MapView;
+import com.baidu.mapapi.map.MyLocationData;
+import com.baidu.mapapi.model.LatLng;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private TextView postionText;
+    private MapView mapView;
+    private BaiduMap baiduMap;
+    private boolean isFirstLocate = true;
 
     public LocationClient mLocationClient = null;
     private MyLocationListener myListener = new MyLocationListener();
@@ -34,9 +44,13 @@ public class MainActivity extends AppCompatActivity {
         //声明LocationClient类
         mLocationClient.registerLocationListener(myListener);
         //注册监听函数
+        SDKInitializer.initialize(getApplicationContext());
 
         setContentView(R.layout.activity_main);
         postionText = (TextView) findViewById(R.id.position_text_view);
+        mapView = (MapView) findViewById(R.id.bmapView);
+        baiduMap = mapView.getMap();
+        baiduMap.setMyLocationEnabled(true);
 
         List<String> permissionList = new ArrayList<>();
 
@@ -62,6 +76,23 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void navigateTo(BDLocation location){
+        if(isFirstLocate){
+            LatLng ll = new LatLng(location.getLatitude(),location.getLongitude());
+            MapStatusUpdate update = MapStatusUpdateFactory.newLatLng(ll);
+            baiduMap.animateMapStatus(update);
+            update = MapStatusUpdateFactory.zoomTo(16f);
+            baiduMap.animateMapStatus(update);
+            isFirstLocate = false;
+        }
+
+        MyLocationData.Builder locationBuilder = new MyLocationData.Builder();
+        locationBuilder.latitude(location.getLatitude());
+        locationBuilder.longitude(location.getLongitude());
+        MyLocationData myLocationData = locationBuilder.build();
+        baiduMap.setMyLocationData(myLocationData);
+    }
+
     private void requestLocation() {
         initLocation();
         mLocationClient.start();
@@ -69,14 +100,30 @@ public class MainActivity extends AppCompatActivity {
 
     private void initLocation() {
         LocationClientOption option = new LocationClientOption();
-        option.setScanSpan(1000);
+        option.setLocationMode(LocationClientOption.LocationMode.Device_Sensors);
+        option.setScanSpan(5000);
+        option.setIsNeedAddress(true);
         mLocationClient.setLocOption(option);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mapView.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        mapView.onPause();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         mLocationClient.stop();
+        mapView.onDestroy();
+        baiduMap.setMyLocationEnabled(false);
     }
 
     @Override
@@ -102,6 +149,9 @@ public class MainActivity extends AppCompatActivity {
     private class MyLocationListener implements BDLocationListener {
         @Override
         public void onReceiveLocation(BDLocation location) {
+            if (location.getLocType() == BDLocation.TypeGpsLocation || location.getLocType() == BDLocation.TypeNetWorkLocation){
+                navigateTo(location);
+            }
             //此处的BDLocation为定位结果信息类，通过它的各种get方法可获取定位相关的全部结果
             //以下只列举部分获取经纬度相关（常用）的结果信息
             //更多结果信息获取说明，请参照类参考中BDLocation类中的说明
@@ -119,9 +169,14 @@ public class MainActivity extends AppCompatActivity {
             StringBuilder currentPosition = new StringBuilder();
             currentPosition.append("纬度：").append(latitude).append("\n");
             currentPosition.append("经度：").append(longitude).append("\n");
-
+            currentPosition.append("国家：").append(location.getCountry()).append("\n");
+            currentPosition.append("省：").append(location.getProvince()).append("\n");
+            currentPosition.append("市：").append(location.getCity()).append("\n");
+            currentPosition.append("区：").append(location.getDistrict()).append("\n");
+            currentPosition.append("街：").append(location.getStreet()).append("\n");
 
             currentPosition.append("定位方式:");
+
             if (location.getLocType() == BDLocation.TypeGpsLocation){
                 currentPosition.append("GPS");
             }else if (location.getLocType() == BDLocation.TypeNetWorkLocation){
